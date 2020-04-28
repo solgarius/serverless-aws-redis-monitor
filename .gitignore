@@ -1,4 +1,5 @@
 # Logs
+.serverless
 logs
 *.log
 npm-debug.log*
