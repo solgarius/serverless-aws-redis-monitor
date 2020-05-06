@@ -1,0 +1,36 @@
+service: aws-redis-monitor
+app: ${opt:app, 'DEFINE VIA --app'}
+org: ${opt:org, 'DEFINE VIA --org'}
+
+frameworkVersion: ">=1.2.0 <2.0.0"
+
+functions:
+  redisMonitor:
+    handler: src/redisMonitor.handler
+    events:
+      # every 1 minute for cloudwatch standard resolution metrics
+      - schedule: rate(1 minute)
+    vpc:
+      securityGroupIds:
+        - "Fn::GetAtt": ServerlessSecurityGroup.GroupId
+      subnetIds:
+        - Ref: PrivateSubnetB
+custom:
+  enterprise:
+    collectLambdaLogs: false
+  redis:
+    host: ${opt:host, 'DEFINE VIA --host'}
+    port: ${opt:port, '6379'}
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  # max 10 seconds, keep this below 60 as the scheduler is every minute.
+  # note if latency to redis is a problem or redis is running slow may need to increase this
+  # ..though in these cases there's probably bigger problems to solve :)
+  timeout: 10
+  environment:
+    REDIS_HOST: "${self:custom.redis.host}"
+    REDIS_PORT: "${self:custom.redis.port}"
+
